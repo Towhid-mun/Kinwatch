@@ -9,7 +9,7 @@
 
 <section class="card">
   <h2>Safe people</h2>
-  <p>Anyone recognized here is <strong>not</strong> flagged as an intruder. Restart the monitor after adding someone new (see docs/HOME-SECURITY.md). Alert email is under <a href="{{ url_for('alert_email_settings') }}">Add alert email</a>, and capture/threshold/cooldown under <a href="{{ url_for('detection_tuning_settings') }}">Detection tuning</a>.</p>
+  <p>Anyone recognized here is <strong>not</strong> flagged as an intruder. Restart the monitor after adding someone new (see docs/HOME-SECURITY.md). Alert notifications (email/Pushover) are under <a href="{{ url_for('alert_email_settings') }}">Alerts</a>, and capture/threshold/cooldown under <a href="{{ url_for('detection_tuning_settings') }}">Detection tuning</a>.</p>
   <ul class="people">
     {% for person in people %}
     <li>

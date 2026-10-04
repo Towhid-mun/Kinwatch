@@ -11,7 +11,7 @@
   </div>
   <p>This is the test/verification page: every detected face, known or not, with the snapshot the monitor saved. Refreshes every 10s.</p>
   <table>
-    <thead><tr><th>When</th><th>Camera</th><th>Status</th><th>Who</th><th>Emailed</th><th>Snapshot</th></tr></thead>
+    <thead><tr><th>When</th><th>Camera</th><th>Status</th><th>Who</th><th>Alerted</th><th>Snapshot</th></tr></thead>
     <tbody>
       {% for d in detections %}
       <tr class="{{ d['status'] }}">
@@ -31,7 +31,7 @@
 
 <section class="card">
   <h2>Activity log</h2>
-  <p>Raw runtime log from both processes (monitor and web app) - matches/misses with confidence scores, email sent/skipped/failed, logins, enrollments. Most recent first, refreshes every 10s.</p>
+  <p>Raw runtime log from both processes (monitor and web app) - matches/misses with confidence scores, alerts sent/skipped/failed, logins, enrollments. Most recent first, refreshes every 10s.</p>
   <pre class="log-box">{% for line in activity_lines %}{{ line }}
 {% else %}(empty - nothing logged yet)
 {% endfor %}</pre>

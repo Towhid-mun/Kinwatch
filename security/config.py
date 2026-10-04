@@ -44,8 +44,10 @@ def _bootstrap_if_missing(path):
             "ADMIN_PASSWORD": "CHANGE_ME",
             "SMTP_HOST": "smtp.gmail.com",
             "SMTP_PORT": "587",
-            "SMTP_USERNAME": "",
-            "SMTP_PASSWORD": "",
+            "EMAIL_ADDRESS": "",
+            "EMAIL_APP_PASSWORD": "",
+            "PUSHOVER_USER": "",
+            "PUSHOVER_TOKEN": "",
             "ALERT_COOLDOWN_SECONDS": "300",
             "CAPTURE_INTERVAL_SECONDS": "5",
             "LBPH_CONFIDENCE_THRESHOLD": "70",
@@ -60,10 +62,22 @@ SECRET_KEY = _env.get("SECRET_KEY", "")
 ADMIN_USERNAME = _env.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = _env.get("ADMIN_PASSWORD", "CHANGE_ME")
 
-SMTP_HOST = _env.get("SMTP_HOST", "")
-SMTP_PORT = int(_env.get("SMTP_PORT", "587"))
-SMTP_USERNAME = _env.get("SMTP_USERNAME", "")
-SMTP_PASSWORD = _env.get("SMTP_PASSWORD", "")
+# Gmail by default. EMAIL_ADDRESS is both the SMTP login and the From
+# address; EMAIL_APP_PASSWORD must be a Google App Password (not the
+# account password). Google displays it in groups of 4 ("abcd efgh ijkl
+# mnop") - spaces are stripped so it can be pasted as shown. The old
+# SMTP_USERNAME/SMTP_PASSWORD names are still read as a fallback so an
+# existing .env keeps working.
+SMTP_HOST = _env.get("SMTP_HOST", "") or "smtp.gmail.com"
+SMTP_PORT = int(_env.get("SMTP_PORT", "") or "587")
+EMAIL_ADDRESS = _env.get("EMAIL_ADDRESS") or _env.get("SMTP_USERNAME", "")
+EMAIL_APP_PASSWORD = (_env.get("EMAIL_APP_PASSWORD") or _env.get("SMTP_PASSWORD", "")).replace(" ", "")
+
+# Pushover (pushover.net): PUSHOVER_USER is your user key (Pushover
+# dashboard), PUSHOVER_TOKEN is the API token of an application you
+# create for this system.
+PUSHOVER_USER = _env.get("PUSHOVER_USER", "").strip()
+PUSHOVER_TOKEN = _env.get("PUSHOVER_TOKEN", "").strip()
 
 ALERT_COOLDOWN_SECONDS = int(_env.get("ALERT_COOLDOWN_SECONDS", "300"))
 CAPTURE_INTERVAL_SECONDS = int(_env.get("CAPTURE_INTERVAL_SECONDS", "5"))

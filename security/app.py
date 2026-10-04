@@ -16,6 +16,7 @@ import hmac
 import os
 import subprocess
 import threading
+import time
 
 import cv2
 from flask import Flask, Response, jsonify, redirect, render_template, request, send_from_directory, session, url_for
@@ -25,7 +26,9 @@ import camera
 import camera_devices
 import config
 import db
+import emailer
 import features
+import pushover
 import wifi
 
 app = Flask(__name__)
@@ -109,6 +112,9 @@ def settings():
     return redirect(url_for("alert_email_settings"))  # old combined page - keep old links/bookmarks working
 
 
+ALERT_CHANNELS = ("email", "pushover", "both")
+
+
 @app.route("/settings/alert-email", methods=["GET", "POST"])
 @login_required
 def alert_email_settings():
@@ -116,13 +122,18 @@ def alert_email_settings():
         db.set_setting("alert_email", request.form.get("alert_email", "").strip())
         # Checkboxes are absent from form data entirely when unchecked -
         # presence, not value, is what "checked" means here.
+        # (Key predates Pushover: it's the master switch for all channels.)
         db.set_setting("email_alerts_enabled", "1" if "email_alerts_enabled" in request.form else "0")
-        log.info("alert email settings updated")
+        channel = request.form.get("alert_channel", "email")
+        db.set_setting("alert_channel", channel if channel in ALERT_CHANNELS else "email")
+        log.info("alert settings updated")
         return redirect(url_for("alert_email_settings"))
     return render_template(
         "alert_email_settings.html",
         alert_email=db.get_setting("alert_email", ""),
         email_alerts_enabled=db.get_setting("email_alerts_enabled", "1") == "1",
+        alert_channel=db.get_setting("alert_channel", "email"),
+        pushover_configured=bool(config.PUSHOVER_USER and config.PUSHOVER_TOKEN),
     )
 
 
@@ -343,7 +354,43 @@ def clear_logs():
 @login_required
 def system():
     autostart_status = _systemd_status()
-    return render_template("system.html", autostart_status=autostart_status)
+    return render_template(
+        "system.html",
+        autostart_status=autostart_status,
+        alert_email=db.get_setting("alert_email", ""),
+        email_sender=config.EMAIL_ADDRESS,
+        pushover_configured=bool(config.PUSHOVER_USER and config.PUSHOVER_TOKEN),
+    )
+
+
+@app.route("/system/test-email", methods=["POST"])
+@login_required
+def system_test_email():
+    to_addr = request.form.get("to", "").strip() or db.get_setting("alert_email", "")
+    if not to_addr:
+        return jsonify(error="no destination address - enter one, or set the alert email under Settings"), 400
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        emailer.send_test_email(to_addr, ts)
+    except Exception as exc:  # noqa: BLE001 - report the SMTP failure to the admin, don't crash
+        log.error(f"test email to {to_addr} failed: {exc}")
+        return jsonify(error=str(exc)), 500
+    log.info(f"test email sent to {to_addr}")
+    return jsonify(ok=True, to=to_addr)
+
+
+@app.route("/system/test-pushover", methods=["POST"])
+@login_required
+def system_test_pushover():
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        image_path = pushover.send_test_notification(ts)
+    except Exception as exc:  # noqa: BLE001 - report the failure to the admin, don't crash
+        log.error(f"test Pushover notification failed: {exc}")
+        return jsonify(error=str(exc)), 500
+    image = os.path.basename(image_path) if image_path else None
+    log.info(f"test Pushover notification sent ({'with ' + image if image else 'no snapshot attached'})")
+    return jsonify(ok=True, image=image)
 
 
 def _systemd_status():

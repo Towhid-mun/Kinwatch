@@ -1,6 +1,6 @@
 """Developer-facing feature toggles. Edit and redeploy (perch build/exec)
 to take effect - distinct from:
-  - security/.env       target-only secrets (admin password, SMTP creds)
+  - security/.env       target-only secrets (admin password, email/Pushover creds)
   - the /settings page   end-user runtime preferences (alert email,
                           detection tuning), stored in security.db,
                           editable from the browser without a redeploy
@@ -20,6 +20,9 @@ ENABLE_ACTIVITY_LOG = True
 # alert_email - use this to ship a build where email is off no matter
 # what an admin later configures through the web UI.
 ENABLE_EMAIL_ALERTS = True
+
+# Same as ENABLE_EMAIL_ALERTS, for Pushover push notifications.
+ENABLE_PUSHOVER_ALERTS = True
 
 # Whether scripts/setup_autostart.sh ENABLES (vs. merely installs) the
 # security-monitor/security-web systemd units, i.e. whether they start

@@ -32,6 +32,7 @@ import config
 import db
 import emailer
 import features
+import pushover
 import recognizer
 
 log = activity_log.get_logger("monitor")
@@ -40,26 +41,14 @@ _last_alert_at = {}
 _last_alert_lock = threading.Lock()
 
 
-def _maybe_email(image_path, ts, cooldown_seconds, device):
+def _send_email_alert(image_path, ts, device):
     if not features.ENABLE_EMAIL_ALERTS:
-        log.info(f"[{device}] unknown person detected but email alerts are disabled in security/features.py - logged, not emailed")
-        return False
-    if db.get_setting("email_alerts_enabled", "1") != "1":
-        log.info(f"[{device}] unknown person detected but email alerts are disabled on /settings - logged, not emailed")
+        log.info(f"[{device}] email alerts are disabled in security/features.py - not emailed")
         return False
     alert_email = db.get_setting("alert_email")
     if not alert_email:
-        log.warning(f"[{device}] unknown person detected but no alert_email configured yet - skipping email (set it on /settings)")
+        log.warning(f"[{device}] no alert_email configured yet - skipping email (set it on /settings)")
         return False
-
-    now = time.time()
-    with _last_alert_lock:  # cooldown is per-camera, but the dict itself is shared across threads
-        remaining = cooldown_seconds - (now - _last_alert_at.get(device, 0.0))
-        if remaining > 0:
-            log.info(f"[{device}] unknown person detected but alert cooldown active ({remaining:.0f}s left) - logged, not emailed")
-            return False
-        _last_alert_at[device] = now
-
     try:
         emailer.send_unknown_person_alert(alert_email, image_path, ts)
     except Exception as exc:  # noqa: BLE001 - report and keep monitoring, one bad send shouldn't kill this camera's loop
@@ -67,6 +56,47 @@ def _maybe_email(image_path, ts, cooldown_seconds, device):
         return False
     log.info(f"[{device}] alert email sent to {alert_email}")
     return True
+
+
+def _send_pushover_alert(image_path, ts, device):
+    if not features.ENABLE_PUSHOVER_ALERTS:
+        log.info(f"[{device}] Pushover alerts are disabled in security/features.py - not pushed")
+        return False
+    try:
+        pushover.send_unknown_person_alert(image_path, ts)
+    except Exception as exc:  # noqa: BLE001 - same as email: report, keep monitoring
+        log.error(f"[{device}] failed to send Pushover alert: {exc}")
+        return False
+    log.info(f"[{device}] Pushover alert sent")
+    return True
+
+
+def _maybe_alert(image_path, ts, cooldown_seconds, device):
+    """Sends the unknown-person alert over the channel(s) chosen on
+    /settings (alert_channel: email, pushover or both). Returns True if
+    at least one channel delivered it."""
+    # "email_alerts_enabled" predates Pushover - it's the master on/off
+    # switch for alerts on any channel, kept under its original key so
+    # existing databases keep their setting.
+    if db.get_setting("email_alerts_enabled", "1") != "1":
+        log.info(f"[{device}] unknown person detected but alerts are disabled on /settings - logged, not alerted")
+        return False
+
+    now = time.time()
+    with _last_alert_lock:  # cooldown is per-camera, but the dict itself is shared across threads
+        remaining = cooldown_seconds - (now - _last_alert_at.get(device, 0.0))
+        if remaining > 0:
+            log.info(f"[{device}] unknown person detected but alert cooldown active ({remaining:.0f}s left) - logged, not alerted")
+            return False
+        _last_alert_at[device] = now
+
+    channel = db.get_setting("alert_channel", "email")
+    sent = False
+    if channel in ("email", "both"):
+        sent = _send_email_alert(image_path, ts, device) or sent
+    if channel in ("pushover", "both"):
+        sent = _send_pushover_alert(image_path, ts, device) or sent
+    return sent
 
 
 def _watch_camera(device, rec):
@@ -117,7 +147,7 @@ def _watch_camera(device, rec):
 
                 emailed = False
                 if status == "unknown":
-                    emailed = _maybe_email(image_path, ts, cooldown, device)
+                    emailed = _maybe_alert(image_path, ts, cooldown, device)
 
                 db.log_detection(status, name, image_path, emailed, camera=device)
 

@@ -17,6 +17,70 @@
   <p>While the monitor auto-starts, it holds the camera continuously - Camview/Capture will fail to open it until you run <code>sudo systemctl stop security-monitor</code> first, then <code>sudo systemctl start security-monitor</code> when you're done.</p>
 </section>
 
+<section class="card">
+  <h2>Email test</h2>
+  {% if email_sender %}
+  <p>Sends a test email from <code>{{ email_sender }}</code> (<code>EMAIL_ADDRESS</code> in <code>security/.env</code>) to confirm alert emails are working.</p>
+  {% else %}
+  <p><strong>No sender configured.</strong> Set <code>EMAIL_ADDRESS</code> and <code>EMAIL_APP_PASSWORD</code> in <code>security/.env</code> on the Pi, then restart the web panel.</p>
+  {% endif %}
+  <form id="testEmailForm">
+    <label>Send to <input type="email" name="to" value="{{ alert_email }}" placeholder="you@example.com" required></label>
+    <button type="submit" id="testEmailBtn">Send test email</button>
+  </form>
+  <p id="testEmailStatus"></p>
+</section>
+<script>
+document.getElementById('testEmailForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('testEmailBtn');
+  const status = document.getElementById('testEmailStatus');
+  btn.disabled = true;
+  status.textContent = 'Sending...';
+  try {
+    const resp = await fetch("{{ url_for('system_test_email') }}", {method: 'POST', body: new FormData(e.target)});
+    const body = await resp.json().catch(() => ({}));
+    status.textContent = resp.ok
+      ? 'Sent to ' + body.to + ' - check that inbox (and spam).'
+      : 'Failed: ' + (body.error || resp.status);
+  } catch (err) {
+    status.textContent = 'Request failed: ' + err;
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+
+<section class="card">
+  <h2>Pushover test</h2>
+  {% if pushover_configured %}
+  <p>Sends a test push notification to the Pushover account in <code>security/.env</code> (<code>PUSHOVER_USER</code>) to confirm phone alerts are working, with the most recent detection snapshot attached.</p>
+  {% else %}
+  <p><strong>Pushover not configured.</strong> Set <code>PUSHOVER_USER</code> and <code>PUSHOVER_TOKEN</code> in <code>security/.env</code> on the Pi, then restart the web panel.</p>
+  {% endif %}
+  <button type="button" id="testPushoverBtn">Send test notification</button>
+  <p id="testPushoverStatus"></p>
+</section>
+<script>
+document.getElementById('testPushoverBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('testPushoverBtn');
+  const status = document.getElementById('testPushoverStatus');
+  btn.disabled = true;
+  status.textContent = 'Sending...';
+  try {
+    const resp = await fetch("{{ url_for('system_test_pushover') }}", {method: 'POST'});
+    const body = await resp.json().catch(() => ({}));
+    status.textContent = resp.ok
+      ? 'Sent ' + (body.image ? 'with snapshot ' + body.image : '(no snapshots yet, text only)') + ' - check the Pushover app on your phone.'
+      : 'Failed: ' + (body.error || resp.status);
+  } catch (err) {
+    status.textContent = 'Request failed: ' + err;
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+
 {% if features.ENABLE_REBOOT_CONTROL %}
 <section class="card">
   <h2>Reboot system</h2>

@@ -157,17 +157,37 @@ cd perch/my-project/security
 nano .env
 ```
 At minimum set `ADMIN_PASSWORD` (still the placeholder `CHANGE_ME` until
-you do), and `SMTP_USERNAME`/`SMTP_PASSWORD` to actually send alert
-emails. `.env` is excluded from the mirror on purpose - it's target-only,
+you do), and `EMAIL_ADDRESS`/`EMAIL_APP_PASSWORD` (the Gmail account
+alerts are sent *from*) to actually send alert emails. `SMTP_HOST`/
+`SMTP_PORT` default to Gmail (`smtp.gmail.com:587`); the older
+`SMTP_USERNAME`/`SMTP_PASSWORD` names are still accepted as a fallback. `.env` is excluded from the mirror on purpose - it's target-only,
 never touches the Mac.
 
-**Using Gmail: `SMTP_PASSWORD` must be an App Password, not your real
+**Using Gmail: `EMAIL_APP_PASSWORD` must be an App Password, not your real
 account password.** Using the real password fails SMTP auth with `535
 ... Username and Password not accepted` (logged to the activity log,
 see below) - this is Gmail rejecting it, not a bug here. Enable
 2-Step Verification (`myaccount.google.com/security`), then generate an
 App Password at `myaccount.google.com/apppasswords` and use that
-16-character value instead.
+16-character value instead (spaces as Google displays them are fine -
+they're stripped).
+
+After editing `.env`, restart both services (`perch exec sudo sh
+scripts/restart_security.sh`), then use **System → Email test → Send
+test email** in the web panel to confirm delivery. Failures show on the
+page and in the activity log.
+
+**Pushover (phone push notifications).** As an alternative or addition
+to email, set in `.env`:
+```
+PUSHOVER_USER=<your user key, from the pushover.net dashboard>
+PUSHOVER_TOKEN=<API token of an application created for this system>
+```
+Then choose **Email**, **Pushover** or **Both** under **Settings →
+Alerts**, restart the services, and use **System → Pushover test → Send
+test notification**. Unknown-person alerts are sent at high priority
+with the snapshot attached. `features.ENABLE_PUSHOVER_ALERTS` is the
+deployment-level kill switch, like `ENABLE_EMAIL_ALERTS`.
 
 ## Running it
 
