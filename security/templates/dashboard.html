@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Home Security{% endblock %}
+{% block content %}
+
+<section class="card">
+  <h2>Live preview</h2>
+  <p>{{ devices|length }} camera{{ '' if devices|length == 1 else 's' }} active. See them live - and stop/resume the monitor with one click if it's holding a camera you want to view - on <a href="{{ url_for('camview') }}">CamView</a>.</p>
+</section>
+
+<section class="card">
+  <h2>Safe people</h2>
+  <p>Anyone recognized here is <strong>not</strong> flagged as an intruder. Restart the monitor after adding someone new (see docs/HOME-SECURITY.md). Alert email is under <a href="{{ url_for('alert_email_settings') }}">Add alert email</a>, and capture/threshold/cooldown under <a href="{{ url_for('detection_tuning_settings') }}">Detection tuning</a>.</p>
+  <ul class="people">
+    {% for person in people %}
+    <li>
+      <img src="{{ url_for('media_known', filename=person['photo_path'].split('/')[-1]) }}" alt="{{ person['name'] }}">
+      <span>{{ person['name'] }}</span>
+      <form method="post" action="{{ url_for('delete_person', person_id=person['id']) }}" class="inline">
+        <button type="submit">Remove</button>
+      </form>
+    </li>
+    {% else %}
+    <li>No one enrolled yet - every detected face will be treated as unknown.</li>
+    {% endfor %}
+  </ul>
+
+  <form method="post" action="{{ url_for('add_person') }}" enctype="multipart/form-data" class="card">
+    <h3>Add a safe person (upload a photo)</h3>
+    <label>Name <input type="text" name="name" required></label>
+    <label>Photo (one clear, front-facing face) <input type="file" name="photo" accept="image/*" required></label>
+    <button type="submit">Add</button>
+  </form>
+  <p>Or use <a href="{{ url_for('capture') }}">Capture</a> to grab a photo from the live camera instead - stop the monitor first, they can't share the camera.</p>
+</section>
+
+{% endblock %}

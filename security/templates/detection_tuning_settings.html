@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Detection tuning - Home Security{% endblock %}
+{% block content %}
+
+<form method="post" action="{{ url_for('detection_tuning_settings') }}">
+  <section class="card">
+    <h2>Detection tuning</h2>
+    <p>Picked up by the monitor at the start of its next cycle - no restart needed.</p>
+    <label>Capture interval (seconds between checks)
+      <input type="number" step="1" min="1" name="capture_interval_seconds" value="{{ capture_interval_seconds }}"></label>
+    <label>LBPH confidence threshold (lower = stricter match, more false "unknown"s)
+      <input type="number" step="1" min="0" name="lbph_confidence_threshold" value="{{ lbph_confidence_threshold }}"></label>
+    <label>Alert email cooldown (seconds between repeat emails for an ongoing unknown presence)
+      <input type="number" step="1" min="0" name="alert_cooldown_seconds" value="{{ alert_cooldown_seconds }}"></label>
+    <button type="submit">Save</button>
+  </section>
+</form>
+
+{% endblock %}

@@ -1,0 +1,52 @@
+# perch project configuration, written by `perch init`.
+# For the full command surface: `perch --help`.
+
+# The ssh alias to build/run on. Resolved entirely by ssh via your own
+# ~/.ssh/config - perch never stores a hostname, port, user or key.
+host = "pi"
+
+# Where the project lives on the target, relative to $HOME there (or an
+# absolute path). Guessed from this directory's own name.
+remote_root = "perch/my-project"
+
+# Extra glob patterns to exclude from the mirror, one per line, beyond the
+# built-in list (.git/, .venv/, __pycache__/, node_modules/, *.o, *.pyc,
+# .DS_Store, .perch.toml, .perch/).
+# `serial_chat` is excluded because the Mac-side build shares this same
+# filename with the target's build output - without this, a Mac-built
+# Mach-O binary left in the workspace root gets pushed over the Pi's
+# correctly-built aarch64 one, and `make` (seeing a newer mtime) skips
+# rebuilding, so `perch run` fails with "Exec format error". Build the
+# Mac side into `.perch/serial_chat` instead (see docs/PHASE-5-BUILD-AND-RUN.md).
+#
+# The security/ module (docs/HOME-SECURITY.md) generates its own data
+# directly on the target - enrolled face photos, detection snapshots, the
+# SQLite log, and local secrets - none of which ever exists on the Mac.
+# Same class of bug as `serial_chat` above (mirror push/delete fighting a
+# target-only file) if left unexcluded, so these are excluded up front,
+# before any of it is ever created:
+exclude = [
+    "serial_chat",
+    "known_faces/",
+    "detections/",
+    "security.db",
+    "activity.log",
+    ".env",
+    ".web.pid",
+    ".monitor.pid",
+]
+
+# Globs auto-pulled from the target into .perch/artifacts/ after every
+# successful run. Anything generated on the target and not listed here
+# (or retrieved with `perch pull`) is lost on the next sync.
+# artifacts = ["main"]
+
+[commands]
+# Shell commands run on the target, inside remote_root, after every sync.
+# Extra arguments given to `perch build`/`test`/`run` are appended to these.
+build = "make"
+# `run` gets its OWN sync first, same as every verb - a binary built by a
+# separate, earlier `perch build` exists only on the target, so that sync
+# deletes it (I2) before this command ever runs. Rebuild in the same
+# command, don't rely on a previous build's artifact surviving:
+run = "make && ./serial_chat"

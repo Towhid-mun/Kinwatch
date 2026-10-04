@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Home Security{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  {% if session.get('admin') %}
+  <header class="topbar">
+    <button type="button" id="menuToggle" class="hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <h1>Home Security</h1>
+    <form action="{{ url_for('logout') }}" method="post" class="inline">
+      <button type="submit" class="ghost">Log out</button>
+    </form>
+  </header>
+
+  <nav id="sideNav" class="sidenav">
+    <div class="sidenav-section">
+      <h3>Safe people</h3>
+      <a href="{{ url_for('dashboard') }}">Add safe person</a>
+      <a href="{{ url_for('capture') }}">Capture image</a>
+    </div>
+    <div class="sidenav-section">
+      <h3>Camera</h3>
+      <a href="{{ url_for('camview') }}">CamView</a>
+    </div>
+    <div class="sidenav-section">
+      <h3>Settings</h3>
+      <a href="{{ url_for('alert_email_settings') }}">Add alert email</a>
+      <a href="{{ url_for('detection_tuning_settings') }}">Detection tuning</a>
+      <a href="{{ url_for('camera_settings') }}">Camera</a>
+    </div>
+    <div class="sidenav-section">
+      <h3>System</h3>
+      <a href="{{ url_for('logs') }}">Logs</a>
+      <a href="{{ url_for('wifi_settings') }}">Wi-Fi</a>
+      <a href="{{ url_for('system') }}">Reboot system</a>
+    </div>
+  </nav>
+  <div id="navOverlay" class="nav-overlay"></div>
+  {% endif %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    (function () {
+      var toggle = document.getElementById('menuToggle');
+      var nav = document.getElementById('sideNav');
+      var overlay = document.getElementById('navOverlay');
+      if (!toggle || !nav || !overlay) return;
+      function close() {
+        nav.classList.remove('open');
+        overlay.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+      toggle.addEventListener('click', function () {
+        var opening = !nav.classList.contains('open');
+        nav.classList.toggle('open', opening);
+        overlay.classList.toggle('open', opening);
+        toggle.setAttribute('aria-expanded', String(opening));
+      });
+      overlay.addEventListener('click', close);
+      nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', close); });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}System - Home Security{% endblock %}
+{% block content %}
+
+<section class="card">
+  <h2>Auto-start on boot</h2>
+  {% if autostart_status %}
+  <table>
+    <tbody>
+      <tr><td>Monitor</td><td><span class="status-dot status-{{ autostart_status.monitor }}"></span> {{ autostart_status.monitor }}</td></tr>
+      <tr><td>Web panel</td><td><span class="status-dot status-{{ autostart_status.web }}"></span> {{ autostart_status.web }}</td></tr>
+    </tbody>
+  </table>
+  {% else %}
+  <p>Not installed yet. Run <code>perch exec sudo sh scripts/setup_autostart.sh</code> to install systemd units for both, so they start automatically on boot (see <code>security/features.py</code>'s <code>AUTO_START_ON_BOOT</code>).</p>
+  {% endif %}
+  <p>While the monitor auto-starts, it holds the camera continuously - Camview/Capture will fail to open it until you run <code>sudo systemctl stop security-monitor</code> first, then <code>sudo systemctl start security-monitor</code> when you're done.</p>
+</section>
+
+{% if features.ENABLE_REBOOT_CONTROL %}
+<section class="card">
+  <h2>Reboot system</h2>
+  <p>Reboots the Raspberry Pi itself. If auto-start is installed and enabled, the monitor and web panel come back up on their own after it restarts.</p>
+  <p><strong>This drops your current connection to the Pi</strong> (SSH, this page, everything) for roughly a minute.</p>
+  <button type="button" id="rebootBtn" class="danger">Reboot now</button>
+  <p id="rebootStatus"></p>
+</section>
+<script>
+document.getElementById('rebootBtn').addEventListener('click', async () => {
+  if (!confirm('Reboot the Raspberry Pi now? This will drop your connection to it for about a minute.')) return;
+  const status = document.getElementById('rebootStatus');
+  status.textContent = 'Sending reboot command...';
+  try {
+    const resp = await fetch("{{ url_for('system_reboot') }}", {method: 'POST'});
+    const body = await resp.json().catch(() => ({}));
+    if (resp.ok) {
+      status.textContent = 'Rebooting now - this page will stop responding shortly.';
+    } else {
+      status.textContent = 'Failed: ' + (body.error || resp.status);
+    }
+  } catch (err) {
+    status.textContent = 'Request failed (likely because the Pi is already rebooting): ' + err;
+  }
+});
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Wi-Fi - Home Security{% endblock %}
+{% block content %}
+
+<section class="card">
+  <h2>Current network</h2>
+  <p>Connected via <strong>{{ current_name or "not connected over Wi-Fi" }}</strong>.</p>
+  {% if pending or change_in_progress %}
+  <p><span class="status-badge status-badge-inactive">Applying new Wi-Fi settings...</span>
+  If this page (or the Pi generally) becomes unreachable, wait about 30 seconds - it automatically reverts to the current network on failure, no action needed. Refresh this page once it's back to confirm which network is active.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Nearby networks</h2>
+  {% if networks %}
+  <table>
+    <thead><tr><th>Network</th><th>Signal</th><th>Security</th></tr></thead>
+    <tbody>
+      {% for net in networks %}
+      <tr>
+        <td><a href="#" class="fill-ssid" data-ssid="{{ net.ssid }}">{{ net.ssid }}</a></td>
+        <td>{{ net.signal }}%</td>
+        <td>{{ net.security }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No networks found (or not currently able to scan).</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Change Wi-Fi network</h2>
+  <p><strong>Read this first:</strong> this Pi has no Ethernet fallback - it reaches you only through Wi-Fi. Submitting below applies the new network in the background and <strong>automatically reverts to the current network within ~25 seconds if it fails</strong> to connect (wrong password, SSID out of range, etc.) - you don't need to do anything if that happens, just wait and refresh. One thing this can't protect against: if the new network's credentials are correct but it doesn't actually route back to wherever you're managing this from (a genuinely different network, not a typo), you'll need physical access to recover - there's no way to detect that case from here.</p>
+  <form method="post" action="{{ url_for('wifi_settings') }}" onsubmit="return confirm('Apply this Wi-Fi network? It reverts automatically within ~25s if it fails to connect.');">
+    <label>Network name (SSID) <input type="text" name="ssid" id="ssidInput" required></label>
+    <label>Password <input type="password" name="password"></label>
+    <button type="submit" {{ 'disabled' if change_in_progress }}>Apply</button>
+  </form>
+</section>
+
+<script>
+document.querySelectorAll('.fill-ssid').forEach(function (a) {
+  a.addEventListener('click', function (event) {
+    event.preventDefault();
+    document.getElementById('ssidInput').value = a.dataset.ssid;
+    document.getElementById('ssidInput').scrollIntoView({behavior: 'smooth'});
+  });
+});
+</script>
+
+{% endblock %}

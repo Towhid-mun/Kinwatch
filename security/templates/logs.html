@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Logs - Home Security{% endblock %}
+{% block head_extra %}<meta http-equiv="refresh" content="10">{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="section-header">
+    <h2>Recent detections</h2>
+    <form method="post" action="{{ url_for('clear_logs') }}" onsubmit="return confirm('Clear all detection records and their saved snapshots? This can\'t be undone.');">
+      <button type="submit" class="danger">Clear</button>
+    </form>
+  </div>
+  <p>This is the test/verification page: every detected face, known or not, with the snapshot the monitor saved. Refreshes every 10s.</p>
+  <table>
+    <thead><tr><th>When</th><th>Camera</th><th>Status</th><th>Who</th><th>Emailed</th><th>Snapshot</th></tr></thead>
+    <tbody>
+      {% for d in detections %}
+      <tr class="{{ d['status'] }}">
+        <td>{{ d['ts'] }}</td>
+        <td>{{ d['camera'] or '-' }}</td>
+        <td>{{ d['status'] }}</td>
+        <td>{{ d['person_name'] or '-' }}</td>
+        <td>{{ 'yes' if d['emailed'] else '-' }}</td>
+        <td><img class="thumb" src="{{ url_for('media_detections', filename=d['image_path'].split('/')[-1]) }}"></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">No detections yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Activity log</h2>
+  <p>Raw runtime log from both processes (monitor and web app) - matches/misses with confidence scores, email sent/skipped/failed, logins, enrollments. Most recent first, refreshes every 10s.</p>
+  <pre class="log-box">{% for line in activity_lines %}{{ line }}
+{% else %}(empty - nothing logged yet)
+{% endfor %}</pre>
+</section>
+{% endblock %}

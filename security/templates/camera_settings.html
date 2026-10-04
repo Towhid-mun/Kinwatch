@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Camera - Home Security{% endblock %}
+{% block content %}
+
+<section class="card">
+  <h2>Detected cameras</h2>
+  {% if detected_cameras %}
+  <p>{{ detected_cameras|length }} camera{{ '' if detected_cameras|length == 1 else 's' }} detected.</p>
+  {% else %}
+  <p>None detected (or <code>v4l2-ctl</code> isn't available).</p>
+  {% endif %}
+</section>
+
+<form method="post" action="{{ url_for('camera_settings') }}">
+  <section class="card">
+    <h2>Active cameras</h2>
+    <p>Every camera checked here is active everywhere it matters - CamView shows all of them, Capture lets you grab a photo from any of them, and the monitor runs full detection/recognition independently on each one. CamView/Capture pick up a change on the very next stream; the monitor only on its next restart.</p>
+
+    <label class="checkbox"><input type="checkbox" name="use_all_cameras" id="useAll" {{ 'checked' if use_all_cameras }}> Use all detected cameras</label>
+
+    <div id="individualList" style="{{ 'display:none' if use_all_cameras }}">
+      {% for cam in detected_cameras %}
+      <label class="checkbox"><input type="checkbox" name="camera_device" value="{{ cam.path }}" {{ 'checked' if cam.path in selected_paths }}> {{ cam.name }} ({{ cam.path }})</label>
+      {% else %}
+      <p class="muted">No cameras detected to choose from individually.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Pixel format / image type &amp; resolution</h2>
+    <p>Applies to every active camera (not configured per-camera).</p>
+
+    <label>Pixel format / image type
+      <select name="camera_pixel_format">
+        <option value="" {{ 'selected' if not camera_pixel_format }}>Auto (let the camera/driver pick)</option>
+        {% for fmt in pixel_format_choices %}
+        <option value="{{ fmt }}" {{ 'selected' if fmt == camera_pixel_format }}>{{ fmt }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>Resolution / ratio
+      <select name="camera_resolution">
+        <option value="" {{ 'selected' if not camera_resolution }}>Auto (let the camera/driver pick)</option>
+        {% for res in resolution_choices %}
+        <option value="{{ res }}" {{ 'selected' if res == camera_resolution }}>{{ res }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <button type="submit">Save</button>
+  </section>
+</form>
+
+<script>
+document.getElementById('useAll').addEventListener('change', function () {
+  document.getElementById('individualList').style.display = this.checked ? 'none' : '';
+});
+</script>
+
+{% endblock %}

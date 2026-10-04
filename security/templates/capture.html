@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Capture - Home Security{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="section-header">
+    <h2>Capture a safe person from a live camera</h2>
+    <span id="monitorStatus" class="status-badge">Checking monitor...</span>
+  </div>
+  <p>{{ devices|length }} camera{{ '' if devices|length == 1 else 's' }} active (see <a href="{{ url_for('camera_settings') }}">Camera settings</a>). Only one process can hold a camera at a time - no need to SSH in, use the button below.</p>
+  <button type="button" id="pauseMonitorBtn" style="display:none">Stop monitor &amp; view cameras</button>
+  <button type="button" id="resumeMonitorBtn" style="display:none">Resume monitoring</button>
+
+  <div class="camera-grid" style="margin-top: 1rem;">
+    {% for device in devices %}
+    <div class="camera-tile">
+      <h3>{{ device }}</h3>
+      <img class="camview-stream cam-img stream-img" data-device="{{ device }}" alt="live feed from {{ device }}">
+      <canvas class="cam-canvas" style="display:none"></canvas>
+      <button type="button" class="snap-btn" data-device="{{ device }}">Capture from this camera</button>
+    </div>
+    {% else %}
+    <p>No cameras active - pick at least one on <a href="{{ url_for('camera_settings') }}">Camera settings</a>.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card" id="previewSection" style="display:none">
+  <h2>Save captured photo</h2>
+  <p id="previewSource" class="muted"></p>
+  <img id="previewImg" class="thumb-large">
+  <form id="saveForm">
+    <label>Name <input type="text" id="nameInput" required></label>
+    <button type="submit">Save as safe person</button>
+  </form>
+  <p id="saveError" class="error"></p>
+</section>
+
+<script src="{{ url_for('static', filename='camera-control.js') }}"></script>
+<script>
+SecurityCameraControl.setup(function () {
+  document.querySelectorAll('.stream-img').forEach(function (img) {
+    img.src = "{{ url_for('stream_mjpg') }}?device=" + encodeURIComponent(img.dataset.device) + "&t=" + Date.now();
+  });
+});
+
+const previewSection = document.getElementById('previewSection');
+const previewSource = document.getElementById('previewSource');
+const previewImg = document.getElementById('previewImg');
+const saveForm = document.getElementById('saveForm');
+const saveError = document.getElementById('saveError');
+let capturedDataUrl = null;
+
+document.querySelectorAll('.snap-btn').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    const device = btn.dataset.device;
+    const img = document.querySelector('.cam-img[data-device="' + device + '"]');
+    const canvas = img.parentElement.querySelector('.cam-canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    capturedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    previewImg.src = capturedDataUrl;
+    previewSource.textContent = 'From ' + device;
+    previewSection.style.display = 'block';
+    previewSection.scrollIntoView({behavior: 'smooth'});
+    saveError.textContent = '';
+  });
+});
+
+saveForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name || !capturedDataUrl) return;
+  saveError.textContent = '';
+  try {
+    const resp = await fetch("{{ url_for('add_person_capture') }}", {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: name, image_data_url: capturedDataUrl}),
+    });
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      saveError.textContent = body.error || 'Failed to save.';
+      return;
+    }
+    window.location = "{{ url_for('dashboard') }}";
+  } catch (err) {
+    saveError.textContent = 'Failed to save: ' + err;
+  }
+});
+</script>
+{% endblock %}

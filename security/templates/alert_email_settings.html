@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Alert email - Home Security{% endblock %}
+{% block content %}
+
+<form method="post" action="{{ url_for('alert_email_settings') }}">
+  <section class="card">
+    <h2>Alert email</h2>
+    <label class="checkbox"><input type="checkbox" name="email_alerts_enabled" {{ 'checked' if email_alerts_enabled }}> Send an email when an unrecognized person is detected</label>
+    <p>Unknown-person alerts (with a snapshot attached) go here when enabled. Every detection is still logged either way (see Logs) - this only controls the email.</p>
+    <label>Alert email <input type="email" name="alert_email" value="{{ alert_email }}" placeholder="you@example.com" required></label>
+    <button type="submit">Save</button>
+  </section>
+</form>
+
+<section class="card">
+  <h2>Not configurable here</h2>
+  <p>SMTP credentials and the admin password are set directly in <code>security/.env</code> on the Pi (excluded from the perch mirror, target-only) - not exposed through the web UI.</p>
+</section>
+
+{% endblock %}

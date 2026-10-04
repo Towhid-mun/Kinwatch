@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Camview - Home Security{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="section-header">
+    <h2>Live cameras</h2>
+    <span id="monitorStatus" class="status-badge">Checking monitor...</span>
+  </div>
+  <p>{{ devices|length }} camera{{ '' if devices|length == 1 else 's' }} active (see <a href="{{ url_for('camera_settings') }}">Camera settings</a>). Only one process can hold a camera at a time - no need to SSH in, use the button below.</p>
+  <button type="button" id="pauseMonitorBtn" style="display:none">Stop monitor &amp; view cameras</button>
+  <button type="button" id="resumeMonitorBtn" style="display:none">Resume monitoring</button>
+
+  <div class="camera-grid" style="margin-top: 1rem;">
+    {% for device in devices %}
+    <div class="camera-tile">
+      <h3>{{ device }}</h3>
+      <img class="camview-stream stream-img" data-device="{{ device }}" alt="live feed from {{ device }}">
+    </div>
+    {% else %}
+    <p>No cameras active - pick at least one on <a href="{{ url_for('camera_settings') }}">Camera settings</a>.</p>
+    {% endfor %}
+  </div>
+</section>
+<script src="{{ url_for('static', filename='camera-control.js') }}"></script>
+<script>
+SecurityCameraControl.setup(function () {
+  document.querySelectorAll('.stream-img').forEach(function (img) {
+    img.src = "{{ url_for('stream_mjpg') }}?device=" + encodeURIComponent(img.dataset.device) + "&t=" + Date.now();
+  });
+});
+</script>
+{% endblock %}
