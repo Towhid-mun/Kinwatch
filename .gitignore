@@ -1,0 +1,30 @@
+# --- OS / editor ---
+.DS_Store
+*.swp
+.idea/
+
+# --- Build output ---
+# serial_chat binary (built on the Pi by `make`, or into .perch/ on the Mac)
+/serial_chat
+*.o
+
+# --- perch local state (sync cache, pulled artifacts, Mac-side builds) ---
+# .perch.toml itself IS tracked - it's the project's target configuration.
+.perch/
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+
+# --- security/ runtime data (generated on the target, never committed) ---
+security/.env
+security/known_faces/
+security/detections/
+security/security.db
+security/activity.log
+security/.web.pid
+security/.monitor.pid
+
+# --- Camera test output ---
+snapshot.jpg
