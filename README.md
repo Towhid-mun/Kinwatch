@@ -38,7 +38,7 @@ runtime.
 ├── src/
 │   └── serial_chat.c      # USB-serial chat tool (C)
 ├── scripts/               # Target-side setup / run / maintenance scripts
-├── docs/                  # Technical docs and business analysis
+├── docs/                  # Technical docs
 ├── Makefile               # Builds serial_chat
 └── .perch.toml            # Remote build/run target configuration
 ```
@@ -87,7 +87,6 @@ For foreground development runs, see `scripts/run_security_web.sh` and
 | [docs/HOME-SECURITY.md](docs/HOME-SECURITY.md) | Security system architecture, setup, operation, camera contention, future work |
 | [docs/PHASE-5-BUILD-AND-RUN.md](docs/PHASE-5-BUILD-AND-RUN.md) | `serial_chat` and USB gadget setup, building the Mac side |
 | [docs/CAMERA-TEST.md](docs/CAMERA-TEST.md) | Single-frame webcam sanity check |
-| [docs/business-analysis/](docs/business-analysis/README.md) | Current state, gaps, viability, roadmap, business plan |
 
 ## Security notes
 

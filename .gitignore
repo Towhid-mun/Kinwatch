@@ -28,3 +28,6 @@ security/.monitor.pid
 
 # --- Camera test output ---
 snapshot.jpg
+
+# --- Private notes (kept local only) ---
+docs/business-analysis/
