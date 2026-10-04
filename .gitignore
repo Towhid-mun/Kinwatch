@@ -19,6 +19,7 @@ __pycache__/
 
 # --- security/ runtime data (generated on the target, never committed) ---
 security/.env
+security/.env.bak*
 security/known_faces/
 security/detections/
 security/security.db

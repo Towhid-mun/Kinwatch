@@ -17,4 +17,4 @@ python3 -m venv .venv
 # fresh random SECRET_KEY and placeholder admin/SMTP fields.
 .venv/bin/python -c "import config"
 
-echo "done - edit security/.env before running (ADMIN_PASSWORD, SMTP_*)"
+echo "done - edit security/.env before running (ADMIN_PASSWORD, EMAIL_ADDRESS, EMAIL_APP_PASSWORD)"

@@ -65,7 +65,7 @@ gets overwritten on every sync.
 # 1. One-time: create the venv, install dependencies, bootstrap security/.env
 perch exec sh scripts/setup_security_env.sh
 
-# 2. On the Pi, set ADMIN_PASSWORD and SMTP_* in security/.env
+# 2. On the Pi, set ADMIN_PASSWORD, EMAIL_ADDRESS and EMAIL_APP_PASSWORD in security/.env
 
 # 3. Install as boot-time services
 perch exec sudo sh scripts/setup_reboot_permission.sh
